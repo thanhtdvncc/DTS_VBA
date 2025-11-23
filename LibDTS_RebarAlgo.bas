@@ -51,7 +51,8 @@ Public Function CalculateStraightBarLength(length As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateStraightBarLength: Error - " & Err.Description, DTS_ERROR
+    ' Note: Cannot log from pure logic layer (violates Clean Architecture)
+    ' Caller should handle and log errors
     CalculateStraightBarLength = length
 End Function
 
@@ -93,7 +94,7 @@ Public Function CalculateHookLength(diameter As Double, angle As Double) As Doub
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateHookLength: Error - " & Err.Description, DTS_ERROR
+    
     CalculateHookLength = 0#
 End Function
 
@@ -125,7 +126,7 @@ Public Function CalculateUShapeLength(width As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateUShapeLength: Error - " & Err.Description, DTS_ERROR
+    
     CalculateUShapeLength = 0#
 End Function
 
@@ -162,7 +163,7 @@ Public Function CalculateStirrupLength(width As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateStirrupLength: Error - " & Err.Description, DTS_ERROR
+    
     CalculateStirrupLength = 0#
 End Function
 
@@ -219,7 +220,7 @@ Public Function CalculateCutLength(shapeCode As Long, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateCutLength: Error - " & Err.Description, DTS_ERROR
+    
     CalculateCutLength = 0#
 End Function
 
@@ -261,7 +262,7 @@ Public Function CalculateBarCount(totalLength As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateBarCount: Error - " & Err.Description, DTS_ERROR
+    
     CalculateBarCount = 0
 End Function
 
@@ -299,7 +300,7 @@ Public Function CalculateActualSpacing(totalLength As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateActualSpacing: Error - " & Err.Description, DTS_ERROR
+    
     CalculateActualSpacing = 0#
 End Function
 
@@ -333,7 +334,7 @@ Public Function GenerateBarPositions(totalLength As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.GenerateBarPositions: Error - " & Err.Description, DTS_ERROR
+    
     Set GenerateBarPositions = New Collection
 End Function
 
@@ -370,7 +371,7 @@ Public Function CalculateWeight(diameter As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateWeight: Error - " & Err.Description, DTS_ERROR
+    
     CalculateWeight = 0#
 End Function
 
@@ -410,7 +411,7 @@ Public Function CalculateDevelopmentLength(diameter As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateDevelopmentLength: Error - " & Err.Description, DTS_ERROR
+    
     CalculateDevelopmentLength = 0#
 End Function
 
@@ -434,7 +435,7 @@ Public Function CalculateEffectiveCover(elementWidth As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateEffectiveCover: Error - " & Err.Description, DTS_ERROR
+    
     CalculateEffectiveCover = cover
 End Function
 
@@ -458,7 +459,7 @@ Public Function CalculateAvailableSpace(elementWidth As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.CalculateAvailableSpace: Error - " & Err.Description, DTS_ERROR
+    
     CalculateAvailableSpace = 0#
 End Function
 
@@ -497,7 +498,7 @@ Public Function ValidateSpacing(spacing As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.ValidateSpacing: Error - " & Err.Description, DTS_ERROR
+    
     ValidateSpacing = False
 End Function
 
@@ -520,7 +521,7 @@ Public Function RoundSpacing(spacing As Double, _
     Exit Function
     
 ErrHandler:
-    LibDTS_Logger.Log "LibDTS_RebarAlgo.RoundSpacing: Error - " & Err.Description, DTS_ERROR
+    
     RoundSpacing = spacing
 End Function
 

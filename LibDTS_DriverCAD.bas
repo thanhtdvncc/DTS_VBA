@@ -309,6 +309,14 @@ Public Function DrawTag(tag As clsDTSTag, _
         Exit Function
     End If
     
+    ' Validate text height
+    If tag.Height <= 0 Then
+        m_LastError = "Tag height must be positive (got: " & tag.Height & ")"
+        LibDTS_Logger.Log DRIVER_NAME & ".DrawTag: " & m_LastError, DTS_ERROR
+        Set DrawTag = Nothing
+        Exit Function
+    End If
+    
     ' Get ModelSpace
     Dim ms As Object
     Set ms = acadDoc.ModelSpace

@@ -167,14 +167,20 @@ Public Function CalculateArea() As Double
     area = 0#
     
     ' Shoelace formula: Area = 0.5 * |sum((xi*yi+1) - (xi+1*yi))|
-    For i = 1 To p_BoundaryPoints.Count - 1
+    ' Convert collection to variables for O(1) access
+    Dim pt1 As clsDTSPoint
+    Dim pt2 As clsDTSPoint
+    Dim count As Long
+    count = p_BoundaryPoints.count
+    
+    For i = 1 To count - 1
         Set pt1 = p_BoundaryPoints(i)
         Set pt2 = p_BoundaryPoints(i + 1)
         area = area + (pt1.X * pt2.Y - pt2.X * pt1.Y)
     Next i
     
     ' Close the polygon
-    Set pt1 = p_BoundaryPoints(p_BoundaryPoints.Count)
+    Set pt1 = p_BoundaryPoints(count)
     Set pt2 = p_BoundaryPoints(1)
     area = area + (pt1.X * pt2.Y - pt2.X * pt1.Y)
     

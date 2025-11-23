@@ -107,11 +107,13 @@ Public Function SerializeBase() As Object
     root.Add "Lay", p_Layer
     
     ' Include custom properties if any exist
+    On Error Resume Next
     If Not p_Properties Is Nothing Then
-        If p_Properties.Count > 0 Then
+        If p_Properties.count > 0 Then
             root.Add "Props", p_Properties
         End If
     End If
+    On Error GoTo 0
     
     Set SerializeBase = root
 End Function

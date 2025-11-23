@@ -393,12 +393,24 @@ Public Function LoadFromEntity(entity As Object) As Object
     Dim xdataType() As Integer
     Dim xdataValue() As Variant
     
+    ' Register app if needed and get XData
     On Error Resume Next
+    
+    ' Try to register application (ignore if already registered)
+    entity.Application.ActiveDocument.RegisteredApplications.Add LibDTS_Global.DTS_XDATA_APPNAME
+    
+    ' Get XData
     entity.GetXData LibDTS_Global.DTS_XDATA_APPNAME, xdataType, xdataValue
+    
     On Error GoTo ErrHandler
     
-    ' Check if XData exists
-    If UBound(xdataType) < 0 Then
+    ' Check if XData exists (UBound check with error handling)
+    On Error Resume Next
+    Dim upperBound As Long
+    upperBound = UBound(xdataType)
+    On Error GoTo ErrHandler
+    
+    If upperBound < 0 Then
         m_LastError = "No XData found on entity"
         Set LoadFromEntity = Nothing
         Exit Function
