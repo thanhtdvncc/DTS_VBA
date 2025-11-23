@@ -56,10 +56,7 @@ Public Function DrawPoint(pt As clsDTSPoint, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(pt.Base.guid)) = 0 Then
-        pt.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (Points don't have Base, so skip this)
     
     ' Dry-run mode
     If dryRun Then
@@ -81,21 +78,16 @@ Public Function DrawPoint(pt As clsDTSPoint, _
     Dim circleObj As Object
     Set circleObj = ms.AddCircle(center, 10#) ' 10mm radius
     
-    ' Set properties
+    ' Set properties (no Base for Point)
     On Error Resume Next
-    If Len(pt.Base.layer) > 0 Then circleObj.layer = pt.Base.layer
-    If pt.Base.color <> 0 Then circleObj.color = pt.Base.color
+    ' Points are simple geometry objects without Base
     On Error GoTo ErrHandler
     
-    ' Save XData
-    SaveXData pt, circleObj
+    ' Note: SaveXData for Point would need special handling
+    ' SaveXData pt, circleObj
     
-    ' Cache mapping
-    If m_EntityCache.Exists(pt.Base.guid) Then
-        m_EntityCache(pt.Base.guid) = circleObj.Handle
-    Else
-        m_EntityCache.Add pt.Base.guid, circleObj.Handle
-    End If
+    ' Cache mapping (Points don't have GUID, use handle)
+    ' Points are basic geometry - no caching needed
     
     LibDTS_Logger.Log DRIVER_NAME & ".DrawPoint: Drew point at (" & pt.X & ", " & pt.Y & ", " & pt.Z & ")", DTS_INFO
     Set DrawPoint = circleObj
@@ -133,10 +125,8 @@ Public Function DrawFrame(frame As clsDTSFrame, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(frame.Base.guid)) = 0 Then
-        frame.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (note: GUID is read-only, generated in Class_Initialize)
+    ' The frame's GUID is already created when the object was instantiated
     
     ' Dry-run mode
     If dryRun Then
@@ -216,10 +206,8 @@ Public Function DrawArea(area As clsDTSArea, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(area.Base.guid)) = 0 Then
-        area.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (note: GUID is read-only, generated in Class_Initialize)
+    ' The area's GUID is already created when the object was instantiated
     
     ' Dry-run mode
     If dryRun Then
@@ -305,14 +293,20 @@ Public Function DrawTag(tag As clsDTSTag, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(tag.Base.guid)) = 0 Then
-        tag.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (note: GUID is read-only, generated in Class_Initialize)
+    ' If we need to access GUID here, it's already created
     
     ' Dry-run mode
     If dryRun Then
         LibDTS_Logger.Log DRIVER_NAME & ".DrawTag [DRY-RUN]: Would draw text '" & tag.TextContent & "' at (" & tag.Position.X & "," & tag.Position.Y & "," & tag.Position.Z & ")", DTS_INFO
+        Set DrawTag = Nothing
+        Exit Function
+    End If
+    
+    ' Validate text height
+    If tag.Height <= 0 Then
+        m_LastError = "Tag height must be positive (got: " & tag.Height & ")"
+        LibDTS_Logger.Log DRIVER_NAME & ".DrawTag: " & m_LastError, DTS_ERROR
         Set DrawTag = Nothing
         Exit Function
     End If
@@ -328,7 +322,7 @@ Public Function DrawTag(tag As clsDTSTag, _
     insPt(2) = tag.Position.Z
     
     Dim textObj As Object
-    Set textObj = ms.AddText(tag.TextContent, insPt, tag.textHeight)
+    Set textObj = ms.AddText(tag.TextContent, insPt, tag.Height)
     
     ' Set properties
     On Error Resume Next
@@ -393,18 +387,8 @@ Public Function ReadPoint(ent As Object) As clsDTSPoint
     center = ent.center
     pt.Init center(0), center(1), center(2)
     
-    ' Get XData
-    Dim xDataStr As String
-    xDataStr = GetRawXData(ent)
-    
-    If Len(xDataStr) > 0 Then
-        pt.Deserialize xDataStr
-        
-        ' Self-healing: update handle if changed
-        If pt.Base.CheckAndHealIdentity(ent.Handle) Then
-            SaveXData pt, ent
-        End If
-    End If
+    ' Note: Points don't have XData/Base in this implementation
+    ' They are simple geometry primitives
     
     LibDTS_Logger.Log DRIVER_NAME & ".ReadPoint: Read point at (" & pt.X & ", " & pt.Y & ", " & pt.Z & ")", DTS_INFO
     Set ReadPoint = pt
@@ -443,18 +427,22 @@ Public Function ReadFrame(ent As Object) As clsDTSFrame
     Dim frame As New clsDTSFrame
     
     ' Get geometry from CAD
-    frame.StartPoint.Init ent.StartPoint(0), ent.StartPoint(1), ent.StartPoint(2)
-    frame.EndPoint.Init ent.EndPoint(0), ent.EndPoint(1), ent.EndPoint(2)
+    Dim startPt As New clsDTSPoint
+    Dim endPt As New clsDTSPoint
+    startPt.Init ent.StartPoint(0), ent.StartPoint(1), ent.StartPoint(2)
+    endPt.Init ent.EndPoint(0), ent.EndPoint(1), ent.EndPoint(2)
+    Set frame.StartPoint = startPt
+    Set frame.EndPoint = endPt
     
     ' Get XData
     Dim xDataStr As String
     xDataStr = GetRawXData(ent)
     
     If Len(xDataStr) > 0 Then
-        frame.Deserialize xDataStr
+        frame.FromXData xDataStr  ' Correct method name
         
         ' Self-healing: update handle if changed
-        If frame.Base.CheckAndHealIdentity(ent.Handle) Then
+        If frame.Base.ValidateIdentity(ent.Handle) Then
             SaveXData frame, ent
         End If
     End If
@@ -505,10 +493,10 @@ Public Function ReadArea(ent As Object) As clsDTSArea
     xDataStr = GetRawXData(ent)
     
     If Len(xDataStr) > 0 Then
-        area.Deserialize xDataStr
+        area.FromXData xDataStr  ' Correct method name
         
         ' Self-healing
-        If area.Base.CheckAndHealIdentity(ent.Handle) Then
+        If area.Base.ValidateIdentity(ent.Handle) Then
             SaveXData area, ent
         End If
     End If
