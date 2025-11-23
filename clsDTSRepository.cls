@@ -394,7 +394,7 @@ Public Function LoadFromEntity(entity As Object) As Object
     Dim xdataValue() As Variant
     
     On Error Resume Next
-    entity.GetXData LibDTS_Global.DTS_APP_NAME, xdataType, xdataValue
+    entity.GetXData LibDTS_Global.DTS_XDATA_APPNAME, xdataType, xdataValue
     On Error GoTo ErrHandler
     
     ' Check if XData exists

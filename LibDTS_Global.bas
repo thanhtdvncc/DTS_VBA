@@ -4,8 +4,10 @@ Option Explicit
 
 ' --- SYSTEM CONSTANTS ---
 Public Const DTS_APP_NAME As String = "DTS_CORE_DATA"
+Public Const DTS_VERSION As String = "2.0.0"
 Public Const DTS_PRECISION As Double = 0.0001
 Public Const DTS_CONFIG_FILENAME As String = "settings.json"
+Public Const DTS_XDATA_APPNAME As String = "DTS_CORE"
 
 ' --- GLOBAL SINGLETONS ---
 ' Bien toan cuc luu tru cau hinh va logger
