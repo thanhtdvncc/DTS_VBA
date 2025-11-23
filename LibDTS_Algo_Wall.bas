@@ -305,8 +305,17 @@ Private Function CheckFrameOverlap(frame1 As clsDTSFrame, frame2 As clsDTSFrame)
     
     ' Calculate overlap
     Dim overlapStart As Double, overlapEnd As Double
-    overlapStart = IIf(t1 > 0, t1, 0)
-    overlapEnd = IIf(t2 < len, t2, len)
+    If t1 > 0 Then
+        overlapStart = t1
+    Else
+        overlapStart = 0
+    End If
+    
+    If t2 < len Then
+        overlapEnd = t2
+    Else
+        overlapEnd = len
+    End If
     
     Dim overlapLen As Double
     overlapLen = overlapEnd - overlapStart

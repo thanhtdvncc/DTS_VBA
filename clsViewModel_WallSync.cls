@@ -18,6 +18,10 @@ Attribute VB_Exposed = False
 ' ==============================================================================
 Option Explicit
 
+' --- CONSTANTS ---
+Private Const PROP_SYNCED_TO_SAP As String = "SyncedToSAP"
+Private Const PROP_SYNC_TIME As String = "SyncTime"
+
 ' --- PRIVATE MEMBERS ---
 Private p_LayerName As String
 Private p_WallThickness As Double
@@ -165,7 +169,17 @@ Public Function RunSyncProcess() As Boolean
     ' ===== STEP 3: SYNC FRAMES TO SAP =====
     p_Status = "Step 3/3: Syncing to SAP2000..."
     
+    On Error Resume Next
     LibDTS_Algo_Wall.SyncFramesToSAP frames
+    
+    ' Check for errors during sync
+    If Err.Number <> 0 Then
+        p_LastError = "Sync failed: " & Err.Description
+        p_Status = "Error: " & p_LastError
+        LibDTS_Logger.Log "clsViewModel_WallSync.RunSyncProcess: " & p_LastError, DTS_ERROR
+        Exit Function
+    End If
+    On Error GoTo ErrHandler
     
     ' Check if all frames were synced successfully
     Dim syncCount As Long
@@ -175,8 +189,8 @@ Public Function RunSyncProcess() As Boolean
     
     Dim frame As Variant
     For Each frame In frames
-        If frame.Base.Properties.Exists("SyncedToSAP") Then
-            If frame.Base.Properties("SyncedToSAP") = True Then
+        If frame.Base.Properties.Exists(PROP_SYNCED_TO_SAP) Then
+            If frame.Base.Properties(PROP_SYNCED_TO_SAP) = True Then
                 syncCount = syncCount + 1
             Else
                 failCount = failCount + 1
