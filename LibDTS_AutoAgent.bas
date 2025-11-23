@@ -82,7 +82,8 @@ Public Sub ReportTokens()
     Debug.Print "Tokens remaining: " & remaining
     
     If remaining <= 0 Then
-        Debug.Print "token exhausted"
+        Debug.Print "Token budget exhausted. Re-initialize with larger budget to continue operations."
+        Debug.Print "Example: LibDTS_AutoAgent.Initialize tokenBudget:=50000, dryRun:=True"
         LibDTS_Logger.Log AGENT_NAME & ": Token budget exhausted", DTS_WARNING
     End If
 End Sub
@@ -557,12 +558,21 @@ End Function
 ' ==========================================
 
 ' Get repository root path
+' Configuration: 
+'   Option 1 (Default): Uses ThisWorkbook.Path - works when running from Excel workbook in repo
+'   Option 2 (Custom): Modify this function to return absolute path to repository
+'   Option 3 (Environment): Use Environ("DTS_REPO_PATH") and set environment variable
+'   Example custom path: GetRepoPath = "C:\Projects\DTS_VBA"
 Private Function GetRepoPath() As String
-    ' This should be the repository root
-    ' In actual VBA environment, this would need to be configured
-    GetRepoPath = ThisWorkbook.Path
+    ' Try environment variable first
+    GetRepoPath = Environ("DTS_REPO_PATH")
     
-    ' Fallback to current directory
+    ' Fallback to workbook path
+    If Len(GetRepoPath) = 0 Then
+        GetRepoPath = ThisWorkbook.Path
+    End If
+    
+    ' Final fallback to current directory
     If Len(GetRepoPath) = 0 Then
         GetRepoPath = CurDir$
     End If
