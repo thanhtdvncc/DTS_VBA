@@ -43,11 +43,6 @@ Private mLA_LastColIndex As Long
 
 ' XData application name constant
 Private Const XDATA_APP As String = "DTS_APP"
-
-' ==============================================================================
-' MVVM REFACTOR: ViewModel instance for wall synchronization
-' ==============================================================================
-Private m_ViewModel As clsViewModel_WallSync
 '
 
 ' ==========================================================================================
@@ -380,45 +375,134 @@ ErrHandler:
     MsgBox "Error clearing list: " & err.description, vbCritical
 End Sub
 
-' ==================== btnCombineWithSAP - REFACTORED TO USE VIEWMODEL ====================
-' MVVM Architecture: View Layer forwards event to ViewModel
-' Legacy logic moved to LibDTS_Algo_Wall (Logic Layer)
-' ==========================================================================================
+' ==================== btnCombineWithSAP - MAIN MAPPING FUNCTION ====================
 Private Sub btnCombineWithSAP_Click()
     On Error GoTo ErrHandler
-    
-    Debug.Print "========== Starting Wall Sync (MVVM Edition) =========="
-    
-    ' Initialize ViewModel if not already created
-    If m_ViewModel Is Nothing Then
-        Set m_ViewModel = New clsViewModel_WallSync
-        m_ViewModel.Initialize
-    End If
-    
-    ' Validate ViewModel settings
-    If Not m_ViewModel.ValidateSettings() Then
-        MsgBox "Invalid settings: " & m_ViewModel.LastError, vbExclamation, "Validation Error"
+
+Debug.Print "========== Starting Combine with SAP2000 =========="
+
+    ' 1. Connect to SAP2000
+    ConnectSAP2000
+    If SapModel Is Nothing Then
+        MsgBox "SAP2000 not connected!", vbExclamation, "Error"
         Exit Sub
     End If
-    
-    ' Execute the sync process via ViewModel
-    Dim success As Boolean
-    success = m_ViewModel.RunSyncProcess()
-    
-    ' Display result to user
-    If success Then
-        MsgBox m_ViewModel.Status, vbInformation, "Sync Complete"
-        Debug.Print "========== Wall Sync Complete: " & m_ViewModel.Status & " =========="
-    Else
-        MsgBox "Sync failed: " & m_ViewModel.LastError, vbCritical, "Sync Error"
-        Debug.Print "========== Wall Sync Failed: " & m_ViewModel.LastError & " =========="
+
+    ' 2. Get Story Info (Priority: Manual -> List)
+    Dim storyInfo   As Object
+    Set storyInfo = GetSelectedStory()
+    If storyInfo Is Nothing Then
+        MsgBox "Please select a story from the list OR enter valid Manual Elevation and Height.", vbExclamation, "Missing Input"
+        Exit Sub
     End If
-    
+
+    ' 3. Get Insertion Point
+    Dim InsertPt    As Variant
+    InsertPt = GetInsertionPoint()
+    If IsEmpty(InsertPt) Then
+        MsgBox "Invalid insertion point!", vbExclamation, "Error"
+        Exit Sub
+    End If
+
+    ' 4. Select Wall Lines in AutoCAD
+    Dim acadApp As Object, acadDoc As Object
+    Set acadApp = Nothing
+    Set acadDoc = Nothing
+
+    On Error Resume Next
+    Set acadApp = GetObject(, "AutoCAD.Application")
+    On Error GoTo ErrHandler
+
+    If acadApp Is Nothing Then
+        MsgBox "AutoCAD not connected!", vbExclamation, "Error"
+        Exit Sub
+    End If
+    Set acadDoc = acadApp.ActiveDocument
+
+    BringAutoCADToFront
+
+    ' Using existing helper to get handles
+    Dim handles     As Variant
+    handles = GetSelectionHandles_OnScreen(acadDoc)
+
+    ' ? FIX 1: Validate handles array
+    If IsEmpty(handles) Then
+        'MsgBox "No entities selected. Operation cancelled.", vbInformation, "Cancelled"
+        Exit Sub
+    End If
+
+    If Not IsArray(handles) Then
+        'MsgBox "Invalid selection data!", vbExclamation, "Error"
+        Exit Sub
+    End If
+
+    If UBound(handles) < LBound(handles) Then
+        'MsgBox "No valid entities selected!", vbExclamation, "Error"
+        Exit Sub
+    End If
+
+    ' 5. Use New API to Get SAP Frames in Z-Range
+    Dim zMin As Double, zMax As Double, currentElev As Double
+    currentElev = CDbl(storyInfo("Elevation"))
+
+    zMin = currentElev - 200
+    zMax = currentElev + 200
+
+    ' Call API DTS_SAP2000_Getlist2node (Mode 3 = Map)
+    Dim propAny(0)  As Variant
+    propAny(0) = "Any"
+
+    Dim frameNodeMap As Object
+    Set frameNodeMap = Nothing
+
+    On Error Resume Next
+    Set frameNodeMap = DTS_SAP2000_Getlist2node("Frame", "Any", propAny, , , , , zMin, zMax, 3)
+    On Error GoTo ErrHandler
+
+    ' ? FIX 2: Validate frameNodeMap
+    If frameNodeMap Is Nothing Then
+        'MsgBox "Failed to retrieve SAP frames!", vbExclamation, "Error"
+        Exit Sub
+    End If
+
+    If frameNodeMap.count = 0 Then
+        'MsgBox "No SAP frames found at elevation range " & zMin & " - " & zMax, vbExclamation, "No Frames"
+        Exit Sub
+    End If
+
+    ' 6. EXECUTE MAPPING (with validation)
+    Dim mappedCount As Long
+    mappedCount = 0
+
+    On Error Resume Next
+    mappedCount = n02_ACAD_Wall_Force_SAP2000.ExecuteWallMapping_Batch( _
+            acadDoc, SapModel, frameNodeMap, handles, InsertPt, CDbl(storyInfo("Elevation")))
+
+    If err.number <> 0 Then
+        'MsgBox "Mapping failed: " & err.description, vbCritical, "Error"
+        err.Clear
+        Exit Sub
+    End If
+    On Error GoTo ErrHandler
+
+    ' ? FIX 3: Only refresh labels if mapping succeeded
+    If mappedCount > 0 Then
+        ' 7. AUTO REFRESH LABELS (Reuse handles - No user prompt)
+        On Error Resume Next
+        RefreshLabels_Core acadDoc, handles, False
+        On Error GoTo ErrHandler
+
+        ' 8. Force Regen
+        acadDoc.Regen 1
+    End If
+
+Debug.Print "Mapping Complete: " & mappedCount & " walls processed"
+
     Exit Sub
-    
+
 ErrHandler:
-    Debug.Print "ERROR in btnCombineWithSAP: " & Err.Description
-    MsgBox "Error in Wall Sync: " & Err.Description, vbCritical, "Error"
+Debug.Print "ERROR in btnCombineWithSAP: " & err.description & " (Line: " & Erl & ")"
+    MsgBox "Error in Combine: " & err.description, vbCritical, "Error"
 End Sub
 
 ' ==================== DEBUG: Show handles with DTS_APP XData ====================
@@ -1475,14 +1559,7 @@ End Sub
 
 Private Sub UserForm_Initialize()
     On Error Resume Next
-    
-    ' ==============================================================================
-    ' MVVM REFACTOR: Initialize ViewModel with default settings
-    ' ==============================================================================
-    Set m_ViewModel = New clsViewModel_WallSync
-    m_ViewModel.Initialize
-    
-    ' Legacy initialization (kept for other features)
+
     ConnectSAP2000
     SapModel.SetPresentUnits (5)    '(KN_m_C)
 
@@ -4808,12 +4885,6 @@ End Sub
 ' FORM CLOSE: Cleanup
 ' ==========================================================================================
 Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
-    ' ==============================================================================
-    ' MVVM REFACTOR: Cleanup ViewModel
-    ' ==============================================================================
-    On Error Resume Next
-    Set m_ViewModel = Nothing
-    
     ' Save user settings
     SaveSettingsToExcel
 

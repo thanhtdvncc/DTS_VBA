@@ -857,14 +857,3 @@ Private Function GetRawXData(ent As Object, Optional appName As String = "") As 
     
     On Error GoTo 0
 End Function
-
-' ==========================================
-' ALIAS: ParseFrame (for backward compatibility)
-' ==========================================
-' Parse a frame from CAD entity (alias for ReadFrame)
-' Parameters:
-'   ent: AutoCAD Line entity
-' Returns: clsDTSFrame object or Nothing on failure
-Public Function ParseFrame(ent As Object) As clsDTSFrame
-    Set ParseFrame = ReadFrame(ent)
-End Function
