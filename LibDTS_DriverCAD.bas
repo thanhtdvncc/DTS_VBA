@@ -439,10 +439,10 @@ Public Function ReadFrame(ent As Object) As clsDTSFrame
     xDataStr = GetRawXData(ent)
     
     If Len(xDataStr) > 0 Then
-        frame.Deserialize xDataStr
+        frame.FromXData xDataStr  ' Correct method name
         
         ' Self-healing: update handle if changed
-        If frame.Base.CheckAndHealIdentity(ent.Handle) Then
+        If frame.Base.ValidateIdentity(ent.Handle) Then
             SaveXData frame, ent
         End If
     End If
@@ -493,10 +493,10 @@ Public Function ReadArea(ent As Object) As clsDTSArea
     xDataStr = GetRawXData(ent)
     
     If Len(xDataStr) > 0 Then
-        area.Deserialize xDataStr
+        area.FromXData xDataStr  ' Correct method name
         
         ' Self-healing
-        If area.Base.CheckAndHealIdentity(ent.Handle) Then
+        If area.Base.ValidateIdentity(ent.Handle) Then
             SaveXData area, ent
         End If
     End If
