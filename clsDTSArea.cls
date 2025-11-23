@@ -163,15 +163,12 @@ Public Function CalculateArea() As Double
     Dim i As Long
     Dim pt1 As clsDTSPoint
     Dim pt2 As clsDTSPoint
+    Dim count As Long
     
     area = 0#
+    count = p_BoundaryPoints.count
     
     ' Shoelace formula: Area = 0.5 * |sum((xi*yi+1) - (xi+1*yi))|
-    ' Convert collection to variables for O(1) access
-    Dim pt1 As clsDTSPoint
-    Dim pt2 As clsDTSPoint
-    Dim count As Long
-    count = p_BoundaryPoints.count
     
     For i = 1 To count - 1
         Set pt1 = p_BoundaryPoints(i)

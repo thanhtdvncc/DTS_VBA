@@ -125,10 +125,8 @@ Public Function DrawFrame(frame As clsDTSFrame, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(frame.Base.guid)) = 0 Then
-        frame.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (note: GUID is read-only, generated in Class_Initialize)
+    ' The frame's GUID is already created when the object was instantiated
     
     ' Dry-run mode
     If dryRun Then
@@ -208,10 +206,8 @@ Public Function DrawArea(area As clsDTSArea, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(area.Base.guid)) = 0 Then
-        area.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (note: GUID is read-only, generated in Class_Initialize)
+    ' The area's GUID is already created when the object was instantiated
     
     ' Dry-run mode
     If dryRun Then
@@ -297,10 +293,8 @@ Public Function DrawTag(tag As clsDTSTag, _
         Exit Function
     End If
     
-    ' Ensure GUID exists
-    If Len(Trim$(tag.Base.guid)) = 0 Then
-        tag.Base.guid = LibDTS_Base.GenerateGUID()
-    End If
+    ' Ensure GUID exists (note: GUID is read-only, generated in Class_Initialize)
+    ' If we need to access GUID here, it's already created
     
     ' Dry-run mode
     If dryRun Then
