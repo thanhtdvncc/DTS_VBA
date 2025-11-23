@@ -106,14 +106,3 @@ F. User Interface (MVVM Pattern)
 clsViewModel_Wall: Handles UI logic, validation, and property change notification.
 
 frmWallInput: Passive View. Only binds to ViewModel properties.
-
-3. IMMEDIATE EXECUTION TASKS
-Please analyze the requirements above and proceed with the following tasks:
-
-Review & Initialization: Check the LibDTS_Global and clsDTSConfig to ensure the Singleton pattern is correctly implemented for Global State management.
-
-Rebar Logic Implementation: Write the LibDTS_RebarAlgo module. It must translate abstract Shape Codes (e.g., "00", "18") into physical lengths and geometry, decoupling the logic from the old RebarDataProcessor.
-
-SAP Driver Completion: Finalize LibDTS_DriverSAP to ensure it can strictly map the Core GUID to SAP elements (using the Comment field if the API version doesn't support GUIDs).
-
-Legacy Migration Strategy: Provide a refactoring guide to convert the all legacy module eg. n02_ACAD_Wall_Force_SAP2000 to use the new clsDTSRepository and clsDTSFrame...
